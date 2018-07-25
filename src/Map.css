@@ -1,0 +1,126 @@
+html,
+body {
+  font-family: Arial, sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+input {
+  font-size: 12px;
+}
+
+h1 {
+  color: #525454;
+  font-size: 22px;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+#hide-listings,
+#show-listings {
+  width: 48%;
+}
+
+hr {
+  background: #D0D7D9;
+  height: 1px;
+  margin: 20px 0 20px 0;
+  border: none;
+}
+
+#map {
+  bottom: 0px;
+  height: 100%;
+  left: 362px;
+  position: absolute;
+  right: 0px;
+}
+
+.options-box {
+  position: absolute;
+  top: 50px;
+  width: 250px;
+  margin: 0;
+  padding: 0;
+  line-height: 35px;
+  padding-left: 10px;
+}
+
+figure{
+ 
+  width: 100px;
+  overflow: hidden;
+}
+
+figure > img{
+  width: 100%;
+}
+
+.button {
+  background-color: rgb(51, 58, 52);
+  border: none;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  position: fixed;
+  right: 0px;
+  top:0;
+}
+
+#pano {
+  width: 200px;
+  height: 200px;
+}
+
+#places-search,
+#search-within-time-text {
+  width: 84%;
+}
+
+.text {
+  font-size: 12px;
+}
+
+#toggle-drawing {
+  width: 27%;
+  position: relative;
+  margin-left: 10px;
+}
+
+#zoom-to-area-text {
+  width: 70%;
+}
+
+#zoom-to-area {
+  width: 24%;
+}
+
+#map {
+  position: relative;
+  left: 0;
+  width: 60wv;
+}
+@media(max-width:770px) {
+  .options-box {
+    display: none;
+    /* position: relative;
+    top:20px;
+    left: 0; */
+    
+  }
+  #map {
+    position: relative;
+    left: 0;
+    width: 60wv;
+  }
+}
