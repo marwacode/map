@@ -2,6 +2,22 @@ import React, { Component } from 'react';
 import escapeRegExp from 'escape-string-regexp'
 import './Map.css'
 
+export class ListItem extends Component {
+
+  render() {
+
+    var places = this.props.places.map((place) => {
+      return (
+        <li key={place.id} id={place.id} tabIndex={(place.id) + 3} role="button">{place.title}</li>
+      )
+    })
+    return (
+      <ul>{places}</ul>
+    )
+  }
+
+}
+
 class MapApp extends Component {
 
   constructor(props) {
@@ -27,7 +43,17 @@ class MapApp extends Component {
     var map;
     var markers = [];
 
-    
+    // adapted from https://www.klaasnotfound.com/2016/11/06/making-google-maps-work-with-react/
+
+    loadJS('https://maps.googleapis.com/maps/api/js?libraries=places,geometry,drawing&key=AIzaSyDyDTQYZsO56VMhkOel5aPghLH2nX_3SIQ&v=3&callback=initMap')
+
+    function loadJS(src) {
+      var ref = window.document.getElementsByTagName("script")[0];
+      var script = window.document.createElement("script");
+      script.src = src;
+      script.async = true;
+      ref.parentNode.insertBefore(script, ref);
+    }
 
     window.initMap = () => {
 
@@ -46,22 +72,20 @@ class MapApp extends Component {
 
       }
 
+
       var infowindow = new window.google.maps.InfoWindow()
 
       addMarkers(this.state.places);
 
       document.getElementById('go-places').addEventListener('click', textSearchPlaces);
 
-
-
       document.querySelector('ul').addEventListener('click', showInfo);
-
 
       document.getElementById('t-button').addEventListener('click', w3_open);
 
       if (document.body.clientWidth > 800) {
         w3_open()
-        //document.querySelector(".options-box").style.display = "none"
+
       } else {
         w3_close()
       }
@@ -87,241 +111,149 @@ class MapApp extends Component {
           infowindow.close()
         }
 
-        
         var place = places.filter((place) => place.id == e.target.id)[0];
         if (place) {
-          var marker = new window.google.maps.Marker({
-            map: map,
-            animation: window.google.maps.Animation.BOUNCE,
-            title: place.title,
-            position: place.location,
-            id: place.id,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 10
-            },
 
+          var marker = markers.filter((marker) => marker.id == e.target.id)[0]
 
-          });
-
-          populateInfoWindow(marker, infowindow)
+          if (marker) { populateInfoWindow(marker, infowindow) }
 
         }
-        
 
       }
 
+      function addMarkers(locations) {
 
+        markers = locations.map(function (location, i) {
+          return new window.google.maps.Marker({
+            position: location.location,
 
-      function addMarkers(locations,) {
-
-        for (var i = 0; i < locations.length; i++) {
-
-          var position = locations[i].location;
-          var title = locations[i].title;
-          var id = locations[i].id;
-
-          var marker = new window.google.maps.Marker({
-            position: position,
-            title: title,
+            title: location.title,
             animation: window.google.maps.Animation.DROP,
-            //icon: defaultIcon,
-            id: id
+            id: location.id
           });
-          // Push the marker to our array of markers.
-          markers.push(marker);
-          // Create an onclick event to open the large infowindow at each marker.
-          marker.addListener('click', function () {
+        });
+
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+          markers[i].addListener('click', function () {
             populateInfoWindow(this, infowindow);
-           
+
+          });
+
+        }
+
+      }
+      function hideMarkers(markers) {
+
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+      }
+
+      var places = this.state.places;
+
+      function textSearchPlaces() {
+        hideMarkers(markers);
+
+        var query = document.getElementById('places-search').value;
+
+        const match = new RegExp(escapeRegExp(query), 'i')
+
+        places = places.filter((place) => match.test((place.title)));
+
+        if (places.length > 0) {
+          addMarkers(places);
+        }
+        else {
+          alert('Not Found')
+        }
+
+      }
+
+
+      function populateInfoWindow(marker, infowindow) {
+
+
+
+        if (infowindow) {
+          infowindow.close()
+        }
+
+
+        marker.setAnimation(window.google.maps.Animation.BOUNCE);
+        // Check to make sure the infowindow is not already opened on this marker.
+        if (infowindow.marker !== marker) {
+
+          infowindow.setContent('');
+          infowindow.marker = marker;
+
+          // Make sure the marker property is cleared if the infowindow is closed.
+          infowindow.addListener('closeclick', function () {
+
+            infowindow.marker = null;
+
           });
 
 
-          for (var i = 0; i < markers.length; i++) {
-            markers[i].setMap(map);
-            //bounds.extend(markers[i].position);
+          infowindow.open(map, marker);
+        }
+
+        marker.setAnimation(null);
+
+
+
+        fetch(`https://api.unsplash.com/search/photos?page=1&query=${marker.title}`, {
+          headers: {
+            Authorization: 'Client-ID be10602b2cbc0032a9f1b254b65b132268bbd15553eff0e11b3c4b273b19f636'
           }
+        }).then(function (response) {
+          return response.json();
+        }).then(addImage)
+          .catch(e => requestError(e, 'image'));
 
-         // var largeInfowindow = new window.google.maps.InfoWindow();
+        function requestError(e, part) {
+          console.log(e);
+          var content = `<p class="network-warning">Oh no! There was an error making a request for the ${part}.</p>`
 
+          infowindow.setContent(content);
         }
 
-      }
+        function addImage(data) {
 
+          const firstImage = data.results[0];
 
-    }
-
-    function hideMarkers(markers) {
-      for (var i = 0; i < markers.length; i++) {
-        markers[i].setMap(null);
-      }
-    }
-
-    var places = this.state.places;
-
-    function textSearchPlaces() {
-      //var bounds = new window.google.maps.LatLngBounds();
-      hideMarkers(markers);
-
-      var query = document.getElementById('places-search').value;
-
-      const match = new RegExp(escapeRegExp(query), 'i')
-
-      places = places.filter((place) => match.test((place.title)));
-
-      if (places.length > 0) {
-        createMarkersForPlaces(places);
-      }
-      else {
-        alert('Not Found')
-      }
-
-      // map.fitBounds(bounds);
-
-    }
-
-
-    function createMarkersForPlaces(places) {
-      // var bounds = new window.google.maps.LatLngBounds();
-      for (var i = 0; i < places.length; i++) {
-        var place = places[i];
-
-        // Create a marker for each place.
-        var marker = new window.google.maps.Marker({
-          map: map,
-          title: place.title,
-          position: place.location,
-          id: place.id
-        });
-        // Create a single infowindow to be used with the place details information
-        // so that only one is open at once.
-        var placeInfoWindow = new window.google.maps.InfoWindow();
-        // If a marker is clicked, do a place details search on it in the next function.
-        marker.addListener('click', function () {
-          if (placeInfoWindow.marker == this) {
-            console.log("This infowindow already is on this marker!");
-          } else {
-            populateInfoWindow(this, placeInfoWindow);
-          }
-        }
-        );
-        markers.push(marker);
-
-      }
-      //map.fitBounds(bounds);
-
-    }
-
-
-    function populateInfoWindow(marker, infowindow) {
-
-      
-
-      if (infowindow) {
-        infowindow.close()
-      }
-
-
-      marker.setAnimation(window.google.maps.Animation.BOUNCE);
-      // Check to make sure the infowindow is not already opened on this marker.
-      if (infowindow.marker !== marker) {
-        
-        infowindow.setContent('');
-        infowindow.marker = marker;
-
-        // Make sure the marker property is cleared if the infowindow is closed.
-        infowindow.addListener('closeclick', function () {
-
-          infowindow.marker = null;
-
-        });
-
-
-        // var streetViewService = new window.google.maps.StreetViewService();
-        // var radius = 50;
-        // // In case the status is OK, which means the pano was found, compute the
-        // // position of the streetview image, then calculate the heading, then get a
-        // // panorama from that and set the options
-        // function getStreetView(data, status) {
-        //   if (status === window.google.maps.StreetViewStatus.OK) {
-        //     var nearStreetViewLocation = data.location.latLng;
-        //     var heading = window.google.maps.geometry.spherical.computeHeading(
-        //       nearStreetViewLocation, marker.position);
-        //     infowindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
-        //     var panoramaOptions = {
-        //       position: nearStreetViewLocation,
-        //       pov: {
-        //         heading: heading,
-        //         pitch: 30
-        //       }
-        //     };
-        //     var panorama = new window.google.maps.StreetViewPanorama(
-        //       document.getElementById('pano'), panoramaOptions);
-        //   } else {
-        //     infowindow.setContent('<div>' + marker.title + '</div>' +
-        //       '<div>No Street View Found</div>');
-        //   }
-        // }
-        // streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-        // Open the infowindow on the correct marker.
-
-        infowindow.open(map, marker);
-      }
-
-      marker.setAnimation(null);
-
-
-
-      fetch(`https://api.unsplash.com/search/photos?page=1&query=${marker.title}`, {
-        headers: {
-          Authorization: 'Client-ID be10602b2cbc0032a9f1b254b65b132268bbd15553eff0e11b3c4b273b19f636'
-        }
-      }).then(function (response) {
-        return response.json();
-      }).then(addImage)
-        .catch(e => requestError(e, 'image'));
-
-      function requestError(e, part) {
-        console.log(e);
-        var content = `<p class="network-warning">Oh no! There was an error making a request for the ${part}.</p>`
-
-        infowindow.setContent(content);
-      }
-
-      function addImage(data) {
-
-        const firstImage = data.results[0];
-
-        if (firstImage) {
-          var content = `<figure>
+          if (firstImage) {
+            var content = `<figure>
               <img src="${firstImage.urls.small}" alt="${marker.title}">
               <figcaption>${marker.title} by ${firstImage.user.name}</figcaption>
           </figure>`;
-        } else {
-          var content = 'Unfortunately, no image was returned for your search.'
+          } else {
+            var content = 'Unfortunately, no image was returned for your search.'
+          }
+          infowindow.setContent(content);
+
         }
-        infowindow.setContent(content);
-
       }
+
     }
-
-
 
   }
 
 
-
-
   textSearchPlaces = () => {
-
-    if (this.state.query) {
+    let showingPlaces
+    if (this.state.query.length > 0) {
       const match = new RegExp(escapeRegExp(this.state.query), 'i')
-      let showingPlaces = this.state.places.filter((place) => match.test(place.title))
+      showingPlaces = this.state.places.filter((place) => match.test(place.title))
+
       this.setState({
         places: showingPlaces
       })
-    } else {
-      alert('No data')
+    }
+    else if (this.state.query.length === 0) {
+
+      window.location.reload()
     }
 
   }
@@ -332,11 +264,6 @@ class MapApp extends Component {
 
   render() {
 
-    var places = this.state.places.map((place, i) => {
-      return (
-        <li key={place.id} id={place.id}>{place.title}</li>
-      )
-    })
     return (
       <div className="container">
 
@@ -346,27 +273,30 @@ class MapApp extends Component {
           <hr />
 
           <div>
-            <span className="text">Search for nearby places</span>
+            <span className="text" id="search">Search for nearby places</span>
+
             <input id="places-search" type="text" placeholder="Filter places: Chelsea Loft"
-              role="search"
-              value={this.state.query}
+              role="search" aria-labelledby="search"
+              value={this.state.query} tabIndex='2'
               onChange={(event) => this.updateQuery(event.target.value)} autoFocus />
-            <input id="go-places" type="button" value="Go"
-              onClick={this.textSearchPlaces} />
+
+            <input id="go-places" type="button" value="Filter"
+              onClick={this.textSearchPlaces} tabIndex='3' />
           </div>
-          <ul>{places}</ul>
+
+          <ListItem places={this.state.places} />
         </div>
 
 
         <div className="w3-teal">
-          <button className="w3-button w3-teal w3-xlarge" id="t-button">☰</button>
+          <button className="w3-button w3-teal w3-xlarge" id="t-button" tabIndex="1">☰</button>
 
           <h1 style={{ color: 'white' }}>Search for Nearby Places</h1>
 
 
         </div>
         <div id="map" ref="map" className="w3-container" role="application">
-          loading map...
+          Loading...
         </div>
       </div>
     )
@@ -378,3 +308,4 @@ export default MapApp;
 // style adapted from https://www.w3schools.com/w3css/tryit.asp?filename=tryw3css_sidebar_over
 
 //images from https://api.unsplash.com/search/photos
+

@@ -110,7 +110,7 @@ figure > img{
   left: 0;
   width: 60wv;
 }
-@media(max-width:770px) {
+@media only screen and (max-width:770px) {
   .options-box {
     display: none;
     /* position: relative;
@@ -124,3 +124,6 @@ figure > img{
     width: 60wv;
   }
 }
+
+li:active, li:focus {border: 1px solid rgb(57, 57, 57)}
+
