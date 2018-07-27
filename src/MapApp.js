@@ -40,8 +40,6 @@ class MapApp extends Component {
 
   componentDidMount() {
 
-    var map;
-    var markers = [];
 
     // adapted from https://www.klaasnotfound.com/2016/11/06/making-google-maps-work-with-react/
 
@@ -54,6 +52,9 @@ class MapApp extends Component {
       script.async = true;
       ref.parentNode.insertBefore(script, ref);
     }
+
+    var map;
+    var markers = [];
 
     window.initMap = () => {
 
@@ -71,6 +72,7 @@ class MapApp extends Component {
         })
 
       }
+
 
 
       var infowindow = new window.google.maps.InfoWindow()
@@ -106,10 +108,6 @@ class MapApp extends Component {
 
 
       function showInfo(e) {
-
-        if (infowindow) {
-          infowindow.close()
-        }
 
         var place = places.filter((place) => place.id == e.target.id)[0];
         if (place) {
@@ -174,13 +172,6 @@ class MapApp extends Component {
 
       function populateInfoWindow(marker, infowindow) {
 
-
-
-        if (infowindow) {
-          infowindow.close()
-        }
-
-
         marker.setAnimation(window.google.maps.Animation.BOUNCE);
         // Check to make sure the infowindow is not already opened on this marker.
         if (infowindow.marker !== marker) {
@@ -213,7 +204,7 @@ class MapApp extends Component {
           .catch(e => requestError(e, 'image'));
 
         function requestError(e, part) {
-          console.log(e);
+
           var content = `<p class="network-warning">Oh no! There was an error making a request for the ${part}.</p>`
 
           infowindow.setContent(content);
@@ -224,7 +215,7 @@ class MapApp extends Component {
           const firstImage = data.results[0];
 
           if (firstImage) {
-            var content = `<figure>
+            var content = `<figure tabindex="10">
               <img src="${firstImage.urls.small}" alt="${marker.title}">
               <figcaption>${marker.title} by ${firstImage.user.name}</figcaption>
           </figure>`;
